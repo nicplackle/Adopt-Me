@@ -1,1 +1,7 @@
-node_modules
+node_modules/
+# for Mac include: DS_Store 
+.cache/
+dist/
+coverage/
+.vscode/
+.env
