@@ -1,25 +1,79 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import pet, { ANIMALS } from "@frontendmasters/pet";
+import useDropdown from "./useDropdown";
+import Results from "./Results";
+import ThemeContext from "./ThemeContext";
 
 const SearchParams = () => {
+  const [theme, setTheme] = useContext(ThemeContext);
   const [
     /* current state= */ location,
-    /* updater for state= */ setLocation
-  ] = useState("Seatle, WA");
+    /* updater for state= */ updateLocation
+  ] = useState("Seattle, WA");
+  const [breeds, updateBreeds] = useState([]);
+  const [pets, setPets] = useState([]);
+  const [animal, AnimalDropdown] = useDropdown("Animal", "dog", ANIMALS);
+  const [breed, BreedDropdown, updateBreed] = useDropdown("Breed", "", breeds);
 
+  async function requestPets() {
+    const { animals } = await pet.animals({
+      location,
+      breed,
+      type: animal
+    });
+
+    console.log("animals", animals);
+
+    setPets(animals || []);
+  }
+  /* does not run on first render */
+  useEffect(() => {
+    /* make setBreeds an empty array and setBreed an empty string */
+    updateBreeds([]);
+    updateBreed("");
+    /* get breeds from api */
+    pet.breeds(animal).then(({ breeds }) => {
+      const breedStrings = breeds.map(({ name }) => name);
+      updateBreeds(breedStrings);
+    }, console.error); /* run only once */
+  }, [animal]);
+
+  /* user sees this markup first */
   return (
     <div className="search-params">
-      <form>
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          requestPets();
+        }}
+      >
         <label htmlFor="location">
           Location
           <input
             id="location"
             value={location}
-            placeholder="location"
-            onChange={e => setLocation(e.target.value)}
+            placeholder="Location"
+            onChange={e => updateLocation(e.target.value)}
           />
         </label>
-        <button>Submit</button>
+        <AnimalDropdown />
+        <BreedDropdown />
+        <label htmlFor="location">
+          Theme
+          <select
+            value={theme}
+            onChange={e => setTheme(e.target.value)}
+            onBlur={e => setTheme(e.target.value)}
+          >
+            <option value="peru">Peru</option>
+            <option value="darkblue">Dark Blue</option>
+            <option value="chartreuse">Chartreuse</option>
+            <option value="mediumorchid">Medium Orchid</option>
+          </select>
+        </label>
+        <button style={{ backgroundColor: theme }}>Submit</button>
       </form>
+      <Results pets={pets} />
     </div>
   );
 };
